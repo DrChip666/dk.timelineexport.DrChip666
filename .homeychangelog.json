@@ -2,5 +2,8 @@
   "1.0.0": {
     "en": "First release: download the timeline as CSV or JSON.",
     "da": "Første udgave: download tidslinjen som CSV eller JSON."
+  },
+  "1.1.0": {
+    "en": "   Flow cards to export the timeline and send the link on, and a choice of link lifetime."
   }
 }
