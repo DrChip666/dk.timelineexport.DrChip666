@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script type="text/javascript" src="/homey.js" data-origin="settings"></script>
+  <style>
+    .te-hidden { display: none; }
+    .te-categories { max-height: 240px; overflow-y: auto; }
+    .te-row { display: flex; gap: 8px; }
+    .te-row > * { flex: 1; }
+    .te-links { display: flex; gap: 16px; margin-bottom: 8px; }
+    .te-links a { cursor: pointer; text-decoration: underline; }
+    .te-buttons button { margin-bottom: 8px; }
+    .te-status { margin: 12px 0; }
+    #te-copybuffer { position: absolute; left: -9999px; top: 0; }
+  </style>
+</head>
+<body>
+  <header class="homey-header">
+    <h1 class="homey-title" data-i18n="settings.title"></h1>
+    <p class="homey-subtitle" data-i18n="settings.subtitle"></p>
+  </header>
+
+  <fieldset class="homey-form-fieldset">
+    <legend class="homey-form-legend" data-i18n="settings.access"></legend>
+    <p id="te-access-intro" class="homey-form-hint te-hidden" data-i18n="settings.accessIntro"></p>
+    <div class="homey-form-group">
+      <label class="homey-form-label" for="te-token" data-i18n="settings.token"></label>
+      <input class="homey-form-input" id="te-token" type="password" autocomplete="off">
+      <p id="te-token-state" class="homey-form-hint"></p>
+    </div>
+    <div class="te-buttons">
+      <button id="te-token-save" class="homey-button-secondary-full" data-i18n="settings.saveToken"></button>
+      <button id="te-token-remove" class="homey-button-transparent-full te-hidden" data-i18n="settings.removeToken"></button>
+    </div>
+  </fieldset>
+
+  <p id="te-summary" class="homey-text-small" data-i18n="settings.loading"></p>
+
+  <div id="te-form" class="te-hidden">
+    <fieldset class="homey-form-fieldset">
+      <legend class="homey-form-legend" data-i18n="settings.filters"></legend>
+
+      <div class="homey-form-group">
+        <label class="homey-form-label" data-i18n="settings.categories"></label>
+        <div class="te-links">
+          <a id="te-all" data-i18n="settings.selectAll"></a>
+          <a id="te-none" data-i18n="settings.selectNone"></a>
+        </div>
+        <div id="te-categories" class="te-categories"></div>
+        <p class="homey-form-hint" data-i18n="settings.categoriesHint"></p>
+      </div>
+
+      <div class="te-row">
+        <div class="homey-form-group">
+          <label class="homey-form-label" for="te-from" data-i18n="settings.from"></label>
+          <input class="homey-form-input" id="te-from" type="date">
+        </div>
+        <div class="homey-form-group">
+          <label class="homey-form-label" for="te-to" data-i18n="settings.to"></label>
+          <input class="homey-form-input" id="te-to" type="date">
+        </div>
+      </div>
+
+      <div class="homey-form-group">
+        <label class="homey-form-label" for="te-text" data-i18n="settings.text"></label>
+        <input class="homey-form-input" id="te-text" type="text">
+      </div>
+    </fieldset>
+
+    <fieldset class="homey-form-fieldset">
+      <legend class="homey-form-legend" data-i18n="settings.fileType"></legend>
+      <div class="homey-form-group">
+        <label class="homey-form-label" for="te-delimiter" data-i18n="settings.delimiter"></label>
+        <select class="homey-form-select" id="te-delimiter">
+          <option value="semicolon" data-i18n="settings.semicolon"></option>
+          <option value="comma" data-i18n="settings.comma"></option>
+        </select>
+      </div>
+    </fieldset>
+
+    <div class="te-buttons">
+      <button id="te-csv" class="homey-button-primary-full" data-i18n="settings.downloadCsv"></button>
+      <button id="te-json" class="homey-button-secondary-full" data-i18n="settings.downloadJson"></button>
+      <button id="te-copy" class="homey-button-transparent-full" data-i18n="settings.copy"></button>
+    </div>
+
+    <p id="te-status" class="te-status homey-text-small"></p>
+    <div id="te-files" class="homey-text-small"></div>
+    <p class="homey-form-hint" data-i18n="settings.downloadFallback"></p>
+  </div>
+
+  <textarea id="te-copybuffer" aria-hidden="true"></textarea>
+
+  <script type="text/javascript">
+    function onHomeyReady(Homey) {
+      var $ = function (id) { return document.getElementById(id); };
+      var busy = false;
+
+      function t(key, tokens) {
+        return Homey.__('settings.' + key, tokens);
+      }
+
+      function showError(err) {
+        var message = (err && err.message) ? err.message : String(err);
+        Homey.alert(t('error', { message: message }));
+      }
+
+      function formatDate(iso) {
+        return iso ? new Date(iso).toLocaleString() : '-';
+      }
+
+      function setBusy(value) {
+        busy = value;
+        ['te-csv', 'te-json', 'te-copy'].forEach(function (id) { $(id).disabled = value; });
+      }
+
+      function selectedCategories() {
+        var boxes = document.querySelectorAll('#te-categories input:checked');
+        return Array.prototype.map.call(boxes, function (box) { return box.value; });
+      }
+
+      function setAll(checked) {
+        var boxes = document.querySelectorAll('#te-categories input');
+        Array.prototype.forEach.call(boxes, function (box) { box.checked = checked; });
+      }
+
+      function renderCategories(categories) {
+        var container = $('te-categories');
+        container.innerHTML = '';
+        categories.forEach(function (category, index) {
+          var label = document.createElement('label');
+          label.className = 'homey-form-checkbox';
+          var input = document.createElement('input');
+          input.className = 'homey-form-checkbox-input';
+          input.type = 'checkbox';
+          input.id = 'te-cat-' + index;
+          input.value = category.uri;
+          var checkmark = document.createElement('span');
+          checkmark.className = 'homey-form-checkbox-checkmark';
+          var text = document.createElement('span');
+          text.className = 'homey-form-checkbox-text';
+          text.textContent = category.name + ' (' + category.count + ')';
+          label.appendChild(input);
+          label.appendChild(checkmark);
+          label.appendChild(text);
+          container.appendChild(label);
+        });
+      }
+
+      function buildPath(format, endpoint) {
+        var params = {
+          format: format,
+          delimiter: $('te-delimiter').value,
+          categories: selectedCategories().join(','),
+          from: $('te-from').value,
+          to: $('te-to').value,
+          text: $('te-text').value.trim()
+        };
+        var query = Object.keys(params)
+          .filter(function (key) { return params[key]; })
+          .map(function (key) { return encodeURIComponent(key) + '=' + encodeURIComponent(params[key]); })
+          .join('&');
+        return (endpoint || '/export') + '?' + query;
+      }
+
+      function fetchExport(format, callback, endpoint) {
+        if (busy) return;
+        setBusy(true);
+        $('te-status').textContent = t('loading');
+        Homey.api('GET', buildPath(format, endpoint), null, function (err, result) {
+          setBusy(false);
+          $('te-status').textContent = '';
+          if (err) return showError(err);
+          if (!result.count) {
+            $('te-status').textContent = t('noMatches');
+            return;
+          }
+          callback(result);
+        });
+      }
+
+      function addLink(text, href) {
+        var link = document.createElement('a');
+        link.href = href;
+        link.target = '_blank';
+        link.rel = 'noopener';
+        link.textContent = text;
+        var line = document.createElement('p');
+        line.appendChild(link);
+        $('te-files').appendChild(line);
+      }
+
+      function download(format) {
+        $('te-files').innerHTML = '';
+        fetchExport(format, function (result) {
+          var url = window.location.origin + result.path;
+          $('te-status').textContent = t('ready', { count: result.count });
+          addLink(t('openFile', { file: result.fileName }), url);
+          if (result.localUrl) addLink(t('openLocal'), result.localUrl);
+          Homey.openURL(url);
+        }, '/download');
+      }
+
+      function copy() {
+        fetchExport('csv', function (result) {
+          var buffer = $('te-copybuffer');
+          buffer.value = result.content.replace(/^\uFEFF/, '');
+          buffer.select();
+          var ok = false;
+          try { ok = document.execCommand('copy'); } catch (err) { ok = false; }
+          if (ok) {
+            $('te-status').textContent = t('copied', { count: result.count });
+          } else if (navigator.clipboard) {
+            navigator.clipboard.writeText(buffer.value)
+              .then(function () { $('te-status').textContent = t('copied', { count: result.count }); })
+              .catch(showError);
+          } else {
+            showError(new Error('Clipboard not available'));
+          }
+        });
+      }
+
+      $('te-all').addEventListener('click', function () { setAll(true); });
+      $('te-none').addEventListener('click', function () { setAll(false); });
+      $('te-csv').addEventListener('click', function () { download('csv'); });
+      $('te-json').addEventListener('click', function () { download('json'); });
+      $('te-copy').addEventListener('click', copy);
+      $('te-text').placeholder = t('textPlaceholder');
+
+      function showTokenState(hasToken, needsToken) {
+        $('te-token-state').textContent = hasToken ? t('tokenSaved') : t('tokenNone');
+        $('te-token-remove').classList.toggle('te-hidden', !hasToken);
+        $('te-access-intro').classList.toggle('te-hidden', !needsToken && hasToken);
+      }
+
+      function loadSummary(first) {
+        $('te-summary').textContent = t('loading');
+        $('te-form').classList.add('te-hidden');
+
+        Homey.api('GET', '/summary', null, function (err, summary) {
+          if (first) Homey.ready();
+          if (err) {
+            $('te-summary').textContent = '';
+            return showError(err);
+          }
+
+          if (summary.access !== 'ok') {
+            showTokenState(summary.hasToken, true);
+            $('te-summary').textContent = summary.message;
+            return;
+          }
+
+          showTokenState(summary.hasToken, false);
+          if (!summary.count) {
+            $('te-summary').textContent = t('empty');
+            return;
+          }
+          $('te-summary').textContent = t('summary', {
+            count: summary.count,
+            oldest: formatDate(summary.oldest),
+            newest: formatDate(summary.newest)
+          });
+          renderCategories(summary.categories);
+          $('te-form').classList.remove('te-hidden');
+        });
+      }
+
+      $('te-token').placeholder = t('tokenPlaceholder');
+
+      $('te-token-save').addEventListener('click', function () {
+        var token = $('te-token').value.trim();
+        if (!token) return Homey.alert(t('tokenEmpty'));
+        Homey.set('apiToken', token, function (err) {
+          if (err) return showError(err);
+          $('te-token').value = '';
+          loadSummary(false);
+        });
+      });
+
+      $('te-token-remove').addEventListener('click', function () {
+        Homey.confirm(t('removeConfirm'), function (err, ok) {
+          if (err || !ok) return;
+          Homey.unset('apiToken', function (unsetErr) {
+            if (unsetErr) return showError(unsetErr);
+            loadSummary(false);
+          });
+        });
+      });
+
+      loadSummary(true);
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="960" viewBox="0 0 960 960">
+  <g fill="none" stroke="#000" stroke-width="40" stroke-linecap="round" stroke-linejoin="round">
+    <!-- timeline -->
+    <line x1="200" y1="110" x2="200" y2="850"/>
+    <circle cx="200" cy="190" r="48"/>
+    <circle cx="200" cy="420" r="48"/>
+    <circle cx="200" cy="650" r="48"/>
+    <!-- entries -->
+    <line x1="310" y1="170" x2="560" y2="170"/>
+    <line x1="310" y1="230" x2="460" y2="230"/>
+    <line x1="310" y1="400" x2="520" y2="400"/>
+    <line x1="310" y1="460" x2="420" y2="460"/>
+    <!-- file with download arrow -->
+    <path d="M560 520 H760 L860 620 V870 H560 Z"/>
+    <path d="M760 520 V620 H860"/>
+    <line x1="710" y1="650" x2="710" y2="800"/>
+    <polyline points="650,745 710,805 770,745"/>
+  </g>
+</svg>

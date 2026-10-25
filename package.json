@@ -1,0 +1,9 @@
+{
+  "name": "dk.timelineexport.drchip666",
+  "version": "1.0.0",
+  "private": true,
+  "main": "app.js",
+  "dependencies": {
+    "homey-api": "^3.21.0"
+  }
+}
