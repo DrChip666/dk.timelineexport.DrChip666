@@ -1,0 +1,36 @@
+{
+  "title": {
+    "en": "Export the timeline",
+    "da": "Eksportér tidslinjen"
+  },
+  "titleFormatted": {
+    "en": "Export the timeline as [[format]] for [[period]]",
+    "da": "Eksportér tidslinjen som [[format]] for [[period]]"
+  },
+  "hint": {
+    "en": "Saves the timeline as a file on Homey. Use the card 'The timeline was exported' to send the link on. Needs an API key in the app settings on newer Homey Pro models.",
+    "da": "Gemmer tidslinjen som en fil på Homey. Brug kortet 'Tidslinjen blev eksporteret' til at sende linket videre. Kræver en API-nøgle i appens indstillinger på nyere Homey Pro-modeller."
+  },
+  "args": [
+    {
+      "name": "format",
+      "type": "dropdown",
+      "title": { "en": "File type", "da": "Filtype" },
+      "values": [
+        { "id": "csv", "label": { "en": "CSV", "da": "CSV" } },
+        { "id": "json", "label": { "en": "JSON", "da": "JSON" } }
+      ]
+    },
+    {
+      "name": "period",
+      "type": "dropdown",
+      "title": { "en": "Period", "da": "Periode" },
+      "values": [
+        { "id": "all", "label": { "en": "the whole timeline", "da": "hele tidslinjen" } },
+        { "id": "day", "label": { "en": "the last 24 hours", "da": "de seneste 24 timer" } },
+        { "id": "week", "label": { "en": "the last 7 days", "da": "de seneste 7 dage" } },
+        { "id": "month", "label": { "en": "the last 30 days", "da": "de seneste 30 dage" } }
+      ]
+    }
+  ]
+}

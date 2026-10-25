@@ -82,6 +82,10 @@
     "getDownload": {
       "method": "GET",
       "path": "/download"
+    },
+    "setOrigin": {
+      "method": "POST",
+      "path": "/origin"
     }
   }
 }

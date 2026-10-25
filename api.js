@@ -11,7 +11,11 @@ module.exports = {
   },
 
   async getDownload({ homey, query }) {
-    return homey.app.createDownload(query);
+    return homey.app.createDownload(query, { source: 'settings' });
+  },
+
+  async setOrigin({ homey, body }) {
+    return homey.app.setOrigin(body && body.origin);
   },
 
 };

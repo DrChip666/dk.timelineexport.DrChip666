@@ -79,6 +79,30 @@
       </div>
     </fieldset>
 
+    <fieldset class="homey-form-fieldset">
+      <legend class="homey-form-legend" data-i18n="settings.links"></legend>
+      <div class="homey-form-group">
+        <label class="homey-form-label" for="te-lifetime" data-i18n="settings.lifetime"></label>
+        <select class="homey-form-select" id="te-lifetime">
+          <option value="15" data-i18n="settings.lifetime15"></option>
+          <option value="60" data-i18n="settings.lifetime60"></option>
+          <option value="360" data-i18n="settings.lifetime360"></option>
+          <option value="720" data-i18n="settings.lifetime720"></option>
+          <option value="1440" data-i18n="settings.lifetime1440"></option>
+        </select>
+        <p class="homey-form-hint" data-i18n="settings.lifetimeHint"></p>
+      </div>
+      <div class="homey-form-group">
+        <label class="homey-form-checkbox">
+          <input class="homey-form-checkbox-input" id="te-trigger" type="checkbox">
+          <span class="homey-form-checkbox-checkmark"></span>
+          <span class="homey-form-checkbox-text" data-i18n="settings.triggerOnManual"></span>
+        </label>
+        <p class="homey-form-hint" data-i18n="settings.triggerOnManualHint"></p>
+      </div>
+      <p id="te-external" class="homey-form-hint"></p>
+    </fieldset>
+
     <div class="te-buttons">
       <button id="te-csv" class="homey-button-primary-full" data-i18n="settings.downloadCsv"></button>
       <button id="te-json" class="homey-button-secondary-full" data-i18n="settings.downloadJson"></button>
@@ -195,9 +219,12 @@
         $('te-files').innerHTML = '';
         fetchExport(format, function (result) {
           var url = window.location.origin + result.path;
-          $('te-status').textContent = t('ready', { count: result.count });
+          $('te-status').textContent = t('ready', { count: result.count, expires: result.expires });
           addLink(t('openFile', { file: result.fileName }), url);
           if (result.localUrl) addLink(t('openLocal'), result.localUrl);
+          if (result.externalUrl && result.externalUrl.indexOf(window.location.origin) !== 0) {
+            addLink(t('openExternal'), result.externalUrl);
+          }
           Homey.openURL(url);
         }, '/download');
       }
@@ -286,6 +313,35 @@
             loadSummary(false);
           });
         });
+      });
+
+      function showExternal(external) {
+        $('te-external').textContent = external
+          ? t('externalKnown', { address: external })
+          : t('externalUnknown');
+      }
+
+      function saveSetting(key, value) {
+        Homey.set(key, value, function (err) {
+          if (err) showError(err);
+        });
+      }
+
+      Homey.get(function (err, settings) {
+        if (err) return showError(err);
+        settings = settings || {};
+        if (settings.csvDelimiter) $('te-delimiter').value = settings.csvDelimiter;
+        $('te-lifetime').value = String(settings.linkLifetime || 15);
+        $('te-trigger').checked = settings.triggerOnManual === true;
+      });
+
+      $('te-delimiter').addEventListener('change', function () { saveSetting('csvDelimiter', this.value); });
+      $('te-lifetime').addEventListener('change', function () { saveSetting('linkLifetime', Number(this.value)); });
+      $('te-trigger').addEventListener('change', function () { saveSetting('triggerOnManual', this.checked); });
+
+      Homey.api('POST', '/origin', { origin: window.location.origin }, function (err, result) {
+        if (err) return;
+        showExternal(result && result.external);
       });
 
       loadSummary(true);

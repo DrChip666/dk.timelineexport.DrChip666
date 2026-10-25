@@ -8,13 +8,21 @@ const crypto = require('crypto');
 
 const FORMATS = ['csv', 'json'];
 const USERDATA = '/userdata';
-const DOWNLOAD_LIFETIME = 15 * 60 * 1000; // exports are deleted again after 15 minutes
 const CSV_COLUMNS = ['dateCreated', 'localTime', 'categoryName', 'category', 'text', 'id'];
+
+// Link lifetimes the user can choose, in minutes
+const LIFETIMES = [15, 60, 360, 720, 1440];
+const DEFAULT_LIFETIME = 15;
+const CLEANUP_INTERVAL = 5 * 60 * 1000;
+
+// Flow card periods, in hours (0 = whole timeline)
+const PERIODS = { all: 0, day: 24, week: 24 * 7, month: 24 * 30 };
 
 class TimelineExportApp extends Homey.App {
 
   async onInit() {
     this.api = null;
+    this.apiToken = null;
 
     // A new or removed API key means the Web API client must be rebuilt
     this.homey.settings.on('set', (key) => {
@@ -24,60 +32,26 @@ class TimelineExportApp extends Homey.App {
       if (key === 'apiToken') this.api = null;
     });
 
-    await this.removeAllDownloads();
+    this.exportedTrigger = this.homey.flow.getTriggerCard('timeline_exported');
+
+    this.homey.flow.getActionCard('export_timeline')
+      .registerRunListener(async (args) => {
+        const since = PERIODS[args.period]
+          ? new Date(Date.now() - PERIODS[args.period] * 60 * 60 * 1000).toISOString()
+          : null;
+        await this.createDownload({ format: args.format, since }, { source: 'flow', period: args.period });
+        return true;
+      });
+
+    await this.cleanupDownloads();
+    this.homey.setInterval(() => this.cleanupDownloads().catch(this.error), CLEANUP_INTERVAL);
+
     this.log('Timeline Export has been initialized');
   }
 
-  async onUninit() {
-    await this.removeAllDownloads();
-  }
-
-  /**
-   * /userdata/ is reachable over HTTP, so every export gets its own
-   * random folder and is removed again shortly after.
-   */
-  async removeDownload(folder) {
-    await fs.rm(path.join(USERDATA, folder), { recursive: true, force: true }).catch(this.error);
-  }
-
-  async removeAllDownloads() {
-    try {
-      const entries = await fs.readdir(USERDATA, { withFileTypes: true });
-      await Promise.all(entries
-        .filter((entry) => entry.isDirectory())
-        .map((entry) => this.removeDownload(entry.name)));
-    } catch (err) {
-      if (err.code !== 'ENOENT') this.error('Could not clean up old exports:', err.message);
-    }
-  }
-
-  async getLocalAddress() {
-    try {
-      return await this.homey.cloud.getLocalAddress();
-    } catch (err) {
-      return null;
-    }
-  }
-
-  async createDownload(query = {}) {
-    const result = await this.getExport(query);
-    if (!result.count) return { count: 0 };
-
-    const folder = crypto.randomUUID();
-    await fs.mkdir(path.join(USERDATA, folder), { recursive: true });
-    await fs.writeFile(path.join(USERDATA, folder, result.fileName), result.content, 'utf8');
-    this.homey.setTimeout(() => this.removeDownload(folder), DOWNLOAD_LIFETIME);
-
-    const urlPath = `/app/${this.homey.manifest.id}/userdata/${folder}/${encodeURIComponent(result.fileName)}`;
-    const localAddress = await this.getLocalAddress();
-
-    return {
-      count: result.count,
-      fileName: result.fileName,
-      path: urlPath,
-      localUrl: localAddress ? `http://${localAddress}${urlPath}` : null,
-    };
-  }
+  /* ---------------------------------------------------------------------
+   * Web API access
+   * ------------------------------------------------------------------- */
 
   getToken() {
     const token = this.homey.settings.get('apiToken');
@@ -126,14 +100,19 @@ class TimelineExportApp extends Homey.App {
     } catch (err) {
       if (TimelineExportApp.isAccessError(err)) {
         this.api = null;
-        const error = new Error(this.homey.__(this.getToken() ? 'errors.tokenRejected' : 'errors.tokenRequired'));
-        error.code = this.getToken() ? 'token_rejected' : 'token_required';
+        const hasToken = !!this.getToken();
+        const error = new Error(this.homey.__(hasToken ? 'errors.tokenRejected' : 'errors.tokenRequired'));
+        error.code = hasToken ? 'token_rejected' : 'token_required';
         this.error(`Access to the timeline was refused (${error.code}):`, err.message || err);
         throw error;
       }
       throw err;
     }
   }
+
+  /* ---------------------------------------------------------------------
+   * Reading the timeline
+   * ------------------------------------------------------------------- */
 
   async getOwnerNames() {
     const owners = await this.withApi((api) => api.notifications.getOwners());
@@ -196,8 +175,8 @@ class TimelineExportApp extends Homey.App {
       }
       throw err;
     }
-    const categories = {};
 
+    const categories = {};
     for (const entry of timeline) {
       if (!categories[entry.category]) {
         categories[entry.category] = { uri: entry.category, name: entry.categoryName, count: 0 };
@@ -215,9 +194,12 @@ class TimelineExportApp extends Homey.App {
     };
   }
 
-  static filterTimeline(timeline, { categories, from, to, text }) {
+  static filterTimeline(timeline, {
+    categories, from, to, text, since,
+  }) {
     const categoryList = categories ? String(categories).split(',').filter(Boolean) : [];
     const isDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''));
+    const sinceTime = since ? new Date(since).getTime() : null;
     const search = text ? String(text).toLowerCase() : '';
 
     return timeline.filter((entry) => {
@@ -226,6 +208,7 @@ class TimelineExportApp extends Homey.App {
       if (categoryList.length && !categoryList.includes(entry.category)) return false;
       if (isDate(from) && day < from) return false;
       if (isDate(to) && day > to) return false;
+      if (sinceTime && !Number.isNaN(sinceTime) && new Date(entry.dateCreated).getTime() < sinceTime) return false;
       if (search && !entry.text.toLowerCase().includes(search)) return false;
       return true;
     });
@@ -243,7 +226,8 @@ class TimelineExportApp extends Homey.App {
 
   async getExport(query = {}) {
     const format = FORMATS.includes(query.format) ? query.format : 'csv';
-    const delimiter = query.delimiter === 'comma' ? ',' : ';';
+    const delimiterSetting = query.delimiter || this.homey.settings.get('csvDelimiter');
+    const delimiter = delimiterSetting === 'comma' ? ',' : ';';
 
     const timeline = await this.getTimeline();
     const rows = TimelineExportApp.filterTimeline(timeline, query);
@@ -258,9 +242,145 @@ class TimelineExportApp extends Homey.App {
     return {
       fileName: `homey-timeline-${stamp}.${format}`,
       mimeType: format === 'json' ? 'application/json' : 'text/csv',
+      format,
       count: rows.length,
+      first: rows.length ? rows[0].localTime : null,
+      last: rows.length ? rows[rows.length - 1].localTime : null,
       content,
     };
+  }
+
+  /* ---------------------------------------------------------------------
+   * Download files in /userdata/
+   *
+   * /userdata/ is reachable over HTTP, so every export gets its own random
+   * folder. Each folder's expiry time is kept in the app settings, so a
+   * link lives as long as promised, also across app restarts.
+   * ------------------------------------------------------------------- */
+
+  getLifetime() {
+    const minutes = Number(this.homey.settings.get('linkLifetime'));
+    return LIFETIMES.includes(minutes) ? minutes : DEFAULT_LIFETIME;
+  }
+
+  getDownloadRegistry() {
+    const registry = this.homey.settings.get('downloads');
+    return (registry && typeof registry === 'object') ? registry : {};
+  }
+
+  async cleanupDownloads() {
+    const registry = this.getDownloadRegistry();
+    const now = Date.now();
+    let folders = [];
+
+    try {
+      const entries = await fs.readdir(USERDATA, { withFileTypes: true });
+      folders = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
+    } catch (err) {
+      if (err.code !== 'ENOENT') this.error('Could not read the export folder:', err.message);
+    }
+
+    // Remove expired exports and folders that are not in the registry
+    for (const folder of folders) {
+      if (!registry[folder] || registry[folder] <= now) {
+        await fs.rm(path.join(USERDATA, folder), { recursive: true, force: true }).catch(this.error);
+      }
+    }
+
+    // Keep only registry entries that still have a folder and have not expired
+    const cleaned = {};
+    for (const [folder, expires] of Object.entries(registry)) {
+      if (expires > now && folders.includes(folder)) cleaned[folder] = expires;
+    }
+    if (Object.keys(cleaned).length !== Object.keys(registry).length) {
+      this.homey.settings.set('downloads', cleaned);
+    }
+  }
+
+  async getLocalAddress() {
+    try {
+      return await this.homey.cloud.getLocalAddress();
+    } catch (err) {
+      return null;
+    }
+  }
+
+  /**
+   * The settings page reports the address it is shown from. When that is a
+   * remote-access address, it is remembered and used for external links.
+   */
+  setOrigin(origin) {
+    let url;
+    try {
+      url = new URL(String(origin || ''));
+    } catch (err) {
+      return { external: this.homey.settings.get('externalOrigin') || null };
+    }
+
+    const host = url.hostname;
+    const isLocal = host === 'localhost'
+      || /^\d{1,3}(\.\d{1,3}){3}$/.test(host)
+      || host.endsWith('.homeylocal.com')
+      || host.endsWith('.local');
+
+    if (url.protocol === 'https:' && !isLocal) {
+      if (this.homey.settings.get('externalOrigin') !== url.origin) {
+        this.homey.settings.set('externalOrigin', url.origin);
+        this.log('Remembered external address:', url.origin);
+      }
+    }
+    return { external: this.homey.settings.get('externalOrigin') || null };
+  }
+
+  /**
+   * Creates an export file and returns its links.
+   * options.source is 'settings' or 'flow'; Flow exports always fire the
+   * trigger card, exports from the settings page only when the user enabled it.
+   */
+  async createDownload(query = {}, options = {}) {
+    const source = options.source || 'settings';
+    const result = await this.getExport(query);
+
+    // From the settings page an empty export is just a message; a Flow still gets a file
+    if (!result.count && source === 'settings') return { count: 0 };
+
+    const folder = crypto.randomUUID();
+    await fs.mkdir(path.join(USERDATA, folder), { recursive: true });
+    await fs.writeFile(path.join(USERDATA, folder, result.fileName), result.content, 'utf8');
+
+    const lifetime = this.getLifetime();
+    const expires = Date.now() + lifetime * 60 * 1000;
+    this.homey.settings.set('downloads', { ...this.getDownloadRegistry(), [folder]: expires });
+
+    const urlPath = `/app/${this.homey.manifest.id}/userdata/${folder}/${encodeURIComponent(result.fileName)}`;
+    const localAddress = await this.getLocalAddress();
+    const externalOrigin = this.homey.settings.get('externalOrigin');
+
+    const download = {
+      count: result.count,
+      format: result.format,
+      fileName: result.fileName,
+      path: urlPath,
+      localUrl: localAddress ? `http://${localAddress}${urlPath}` : '',
+      externalUrl: externalOrigin ? `${externalOrigin}${urlPath}` : '',
+      expires: this.formatLocalTime(new Date(expires).toISOString()),
+      period: result.count ? `${result.first} – ${result.last}` : '',
+      lifetime,
+    };
+
+    if (source === 'flow' || this.homey.settings.get('triggerOnManual') === true) {
+      await this.exportedTrigger.trigger({
+        local_url: download.localUrl,
+        external_url: download.externalUrl,
+        file_name: download.fileName,
+        count: download.count,
+        format: download.format.toUpperCase(),
+        period: download.period,
+        expires: download.expires,
+      }).catch(this.error);
+    }
+
+    return download;
   }
 
 }

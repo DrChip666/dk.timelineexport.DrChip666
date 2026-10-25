@@ -1,0 +1,54 @@
+{
+  "title": {
+    "en": "The timeline was exported",
+    "da": "Tidslinjen blev eksporteret"
+  },
+  "hint": {
+    "en": "Starts when an export file is ready. The links work for the link lifetime chosen in the app settings. The local link only works on your home network.",
+    "da": "Starter, når en eksportfil er klar. Linkene virker i den levetid, der er valgt i appens indstillinger. Det lokale link virker kun på dit hjemmenetværk."
+  },
+  "tokens": [
+    {
+      "name": "local_url",
+      "type": "string",
+      "title": { "en": "Local link", "da": "Lokalt link" },
+      "example": { "en": "http://192.168.1.50/app/.../homey-timeline.csv", "da": "http://192.168.1.50/app/.../homey-timeline.csv" }
+    },
+    {
+      "name": "external_url",
+      "type": "string",
+      "title": { "en": "External link", "da": "Eksternt link" },
+      "example": { "en": "https://.../homey-timeline.csv", "da": "https://.../homey-timeline.csv" }
+    },
+    {
+      "name": "file_name",
+      "type": "string",
+      "title": { "en": "File name", "da": "Filnavn" },
+      "example": { "en": "homey-timeline-2026-10-25-23-00-00.csv", "da": "homey-timeline-2026-10-25-23-00-00.csv" }
+    },
+    {
+      "name": "count",
+      "type": "number",
+      "title": { "en": "Notifications", "da": "Antal notifikationer" },
+      "example": 235
+    },
+    {
+      "name": "format",
+      "type": "string",
+      "title": { "en": "File type", "da": "Filtype" },
+      "example": { "en": "CSV", "da": "CSV" }
+    },
+    {
+      "name": "period",
+      "type": "string",
+      "title": { "en": "Period", "da": "Periode" },
+      "example": { "en": "2026-10-18 09:12:00 – 2026-10-25 22:41:00", "da": "2026-10-18 09:12:00 – 2026-10-25 22:41:00" }
+    },
+    {
+      "name": "expires",
+      "type": "string",
+      "title": { "en": "Link expires", "da": "Link udløber" },
+      "example": { "en": "2026-10-26 23:00:00", "da": "2026-10-26 23:00:00" }
+    }
+  ]
+}
