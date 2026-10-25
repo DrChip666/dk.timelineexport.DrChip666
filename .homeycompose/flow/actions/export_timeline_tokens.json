@@ -1,0 +1,180 @@
+{
+  "title": {
+    "en": "Export the timeline and return it",
+    "da": "Eksportér tidslinjen og returnér den"
+  },
+  "titleFormatted": {
+    "en": "Export the timeline as [[format]] for [[period]] and return it",
+    "da": "Eksportér tidslinjen som [[format]] for [[period]] og returnér den"
+  },
+  "hint": {
+    "en": "Same as 'Export the timeline', but gives the links and the content directly as tags on this card. Only available in Advanced Flow.",
+    "da": "Som 'Eksportér tidslinjen', men giver linkene og indholdet direkte som tags på dette kort. Kun tilgængeligt i Advanced Flow."
+  },
+  "args": [
+    {
+      "name": "format",
+      "type": "dropdown",
+      "title": {
+        "en": "File type",
+        "da": "Filtype"
+      },
+      "values": [
+        {
+          "id": "csv",
+          "label": {
+            "en": "CSV",
+            "da": "CSV"
+          }
+        },
+        {
+          "id": "json",
+          "label": {
+            "en": "JSON",
+            "da": "JSON"
+          }
+        }
+      ]
+    },
+    {
+      "name": "period",
+      "type": "dropdown",
+      "title": {
+        "en": "Period",
+        "da": "Periode"
+      },
+      "values": [
+        {
+          "id": "all",
+          "label": {
+            "en": "the whole timeline",
+            "da": "hele tidslinjen"
+          }
+        },
+        {
+          "id": "yesterday",
+          "label": {
+            "en": "yesterday",
+            "da": "i går"
+          }
+        },
+        {
+          "id": "day",
+          "label": {
+            "en": "the last 24 hours",
+            "da": "de seneste 24 timer"
+          }
+        },
+        {
+          "id": "week",
+          "label": {
+            "en": "the last 7 days",
+            "da": "de seneste 7 dage"
+          }
+        },
+        {
+          "id": "month",
+          "label": {
+            "en": "the last 30 days",
+            "da": "de seneste 30 dage"
+          }
+        }
+      ]
+    }
+  ],
+  "tokens": [
+    {
+      "name": "local_url",
+      "type": "string",
+      "title": {
+        "en": "Local link",
+        "da": "Lokalt link"
+      },
+      "example": {
+        "en": "http://192.168.1.50/app/.../homey-timeline.csv",
+        "da": "http://192.168.1.50/app/.../homey-timeline.csv"
+      }
+    },
+    {
+      "name": "external_url",
+      "type": "string",
+      "title": {
+        "en": "External link",
+        "da": "Eksternt link"
+      },
+      "example": {
+        "en": "https://.../homey-timeline.csv",
+        "da": "https://.../homey-timeline.csv"
+      }
+    },
+    {
+      "name": "file_name",
+      "type": "string",
+      "title": {
+        "en": "File name",
+        "da": "Filnavn"
+      },
+      "example": {
+        "en": "homey-timeline-2026-10-25-23-00-00.csv",
+        "da": "homey-timeline-2026-10-25-23-00-00.csv"
+      }
+    },
+    {
+      "name": "count",
+      "type": "number",
+      "title": {
+        "en": "Notifications",
+        "da": "Antal notifikationer"
+      },
+      "example": 235
+    },
+    {
+      "name": "format",
+      "type": "string",
+      "title": {
+        "en": "File type",
+        "da": "Filtype"
+      },
+      "example": {
+        "en": "CSV",
+        "da": "CSV"
+      }
+    },
+    {
+      "name": "period",
+      "type": "string",
+      "title": {
+        "en": "Period",
+        "da": "Periode"
+      },
+      "example": {
+        "en": "2026-10-18 09:12:00 – 2026-10-25 22:41:00",
+        "da": "2026-10-18 09:12:00 – 2026-10-25 22:41:00"
+      }
+    },
+    {
+      "name": "expires",
+      "type": "string",
+      "title": {
+        "en": "Link expires",
+        "da": "Link udløber"
+      },
+      "example": {
+        "en": "2026-10-26 23:00:00",
+        "da": "2026-10-26 23:00:00"
+      }
+    },
+    {
+      "name": "content",
+      "type": "string",
+      "title": {
+        "en": "Content",
+        "da": "Indhold"
+      },
+      "example": {
+        "en": "dateCreated;localTime;categoryName;…",
+        "da": "dateCreated;localTime;categoryName;…"
+      }
+    }
+  ]
+}

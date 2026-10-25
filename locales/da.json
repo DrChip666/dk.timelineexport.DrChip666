@@ -50,7 +50,9 @@
     "triggerOnManualHint": "Kortet \"Tidslinjen blev eksporteret\" starter altid ved eksport fra Flows. Sæt flueben her, hvis det også skal starte, når du downloader her.",
     "externalKnown": "Eksterne links bruger __address__.",
     "externalUnknown": "Der er endnu ingen kendt ekstern adresse, så tagget \"Eksternt link\" er tomt. Åbn disse indstillinger én gang via fjernadgang (væk hjemmefra, eller med wifi slået fra på telefonen) for at sætte den.",
-    "openExternal": "Åbn via den eksterne adresse"
+    "openExternal": "Åbn via den eksterne adresse",
+    "tab": "Tabulator",
+    "delimiterHint": "Bruges også af Flow-kortene. Vælg Tabulator, hvis du indsætter indholdet i Excel eller Google Sheets, f.eks. fra en e-mail, så data lander direkte i kolonner."
   },
   "errors": {
     "tokenRequired": "Homey lader ikke apps læse tidslinjen på egen hånd. Tilføj en API-nøgle i appens indstillinger.",

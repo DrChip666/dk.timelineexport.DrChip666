@@ -15,8 +15,9 @@ const LIFETIMES = [15, 60, 360, 720, 1440];
 const DEFAULT_LIFETIME = 15;
 const CLEANUP_INTERVAL = 5 * 60 * 1000;
 
-// Flow card periods, in hours (0 = whole timeline)
+// Flow card periods, in hours (0 = whole timeline). "yesterday" is handled separately
 const PERIODS = { all: 0, day: 24, week: 24 * 7, month: 24 * 30 };
+const DELIMITERS = { semicolon: ';', comma: ',', tab: '\t' };
 
 class TimelineExportApp extends Homey.App {
 
@@ -36,17 +37,54 @@ class TimelineExportApp extends Homey.App {
 
     this.homey.flow.getActionCard('export_timeline')
       .registerRunListener(async (args) => {
-        const since = PERIODS[args.period]
-          ? new Date(Date.now() - PERIODS[args.period] * 60 * 60 * 1000).toISOString()
-          : null;
-        await this.createDownload({ format: args.format, since }, { source: 'flow', period: args.period });
+        await this.createDownload(this.getPeriodQuery(args), { source: 'flow' });
         return true;
+      });
+
+    // Same export, but returns the tags directly (Advanced Flow only)
+    this.homey.flow.getActionCard('export_timeline_tokens')
+      .registerRunListener(async (args) => {
+        const download = await this.createDownload(this.getPeriodQuery(args), { source: 'flow' });
+        return TimelineExportApp.toTokens(download);
       });
 
     await this.cleanupDownloads();
     this.homey.setInterval(() => this.cleanupDownloads().catch(this.error), CLEANUP_INTERVAL);
 
     this.log('Timeline Export has been initialized');
+  }
+
+  /**
+   * Turns a Flow card's format and period into an export query.
+   * "yesterday" is the whole previous calendar day in Homey's time zone,
+   * so daily exports neither overlap nor leave gaps.
+   */
+  getPeriodQuery(args) {
+    const query = { format: args.format };
+    if (args.period === 'yesterday') {
+      const today = this.formatLocalTime(new Date().toISOString()).slice(0, 10);
+      const [year, month, day] = today.split('-').map(Number);
+      const yesterday = new Date(Date.UTC(year, month - 1, day - 1)).toISOString().slice(0, 10);
+      query.from = yesterday;
+      query.to = yesterday;
+    } else if (PERIODS[args.period]) {
+      query.since = new Date(Date.now() - PERIODS[args.period] * 60 * 60 * 1000).toISOString();
+    }
+    return query;
+  }
+
+  static toTokens(download) {
+    return {
+      local_url: download.localUrl,
+      external_url: download.externalUrl,
+      file_name: download.fileName,
+      count: download.count,
+      format: download.format.toUpperCase(),
+      period: download.period,
+      expires: download.expires,
+      // Without the BOM, which only matters for files opened in Excel
+      content: download.content.replace(/^\uFEFF/, ''),
+    };
   }
 
   /* ---------------------------------------------------------------------
@@ -215,7 +253,10 @@ class TimelineExportApp extends Homey.App {
   }
 
   static toCsv(rows, delimiter) {
-    const escape = (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
+    // With Tab, fields need no quotes: cleanText() already removes tabs and line breaks
+    const escape = delimiter === '\t'
+      ? (value) => String(value ?? '').replace(/[\t\r\n]+/g, ' ')
+      : (value) => `"${String(value ?? '').replace(/"/g, '""')}"`;
     const lines = [CSV_COLUMNS.join(delimiter)];
     for (const row of rows) {
       lines.push(CSV_COLUMNS.map((column) => escape(row[column])).join(delimiter));
@@ -227,7 +268,7 @@ class TimelineExportApp extends Homey.App {
   async getExport(query = {}) {
     const format = FORMATS.includes(query.format) ? query.format : 'csv';
     const delimiterSetting = query.delimiter || this.homey.settings.get('csvDelimiter');
-    const delimiter = delimiterSetting === 'comma' ? ',' : ';';
+    const delimiter = DELIMITERS[delimiterSetting] || DELIMITERS.semicolon;
 
     const timeline = await this.getTimeline();
     const rows = TimelineExportApp.filterTimeline(timeline, query);
@@ -369,16 +410,20 @@ class TimelineExportApp extends Homey.App {
     };
 
     if (source === 'flow' || this.homey.settings.get('triggerOnManual') === true) {
-      await this.exportedTrigger.trigger({
-        local_url: download.localUrl,
-        external_url: download.externalUrl,
-        file_name: download.fileName,
-        count: download.count,
-        format: download.format.toUpperCase(),
-        period: download.period,
-        expires: download.expires,
-      }).catch(this.error);
+      const tokens = TimelineExportApp.toTokens({ ...download, content: result.content });
+      const size = Buffer.byteLength(tokens.content, 'utf8');
+      this.log(`Starting "The timeline was exported" with ${download.count} notifications (content tag: ${size} bytes)`);
+      try {
+        await this.exportedTrigger.trigger(tokens);
+      } catch (err) {
+        // If the content is too large for a tag, still deliver the links
+        this.error(`The trigger failed with a content tag of ${size} bytes, retrying without content:`, err.message || err);
+        await this.exportedTrigger.trigger({ ...tokens, content: '' }).catch(this.error);
+      }
     }
+
+    // The settings page does not need the content; Flow cards do
+    if (source === 'flow') download.content = result.content;
 
     return download;
   }

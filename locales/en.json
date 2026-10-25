@@ -50,7 +50,9 @@
     "triggerOnManualHint": "The card \"The timeline was exported\" always starts for exports from Flows. Tick this to also start it when you download here.",
     "externalKnown": "External links use __address__.",
     "externalUnknown": "No external address is known yet, so the tag \"External link\" stays empty. Open these settings once via remote access (away from home, or with Wi-Fi turned off on your phone) to set it.",
-    "openExternal": "Open via the external address"
+    "openExternal": "Open via the external address",
+    "tab": "Tab",
+    "delimiterHint": "Also used by Flow cards. Choose Tab if you paste the content into Excel or Google Sheets, for example from an email, to get the data in columns straight away."
   },
   "errors": {
     "tokenRequired": "Homey does not let apps read the timeline on their own. Add an API key in the app settings.",
