@@ -4,6 +4,10 @@
     "da": "Første udgave: download tidslinjen som CSV eller JSON."
   },
   "1.1.0": {
-    "en": "   Flow cards to export the timeline and send the link on, and a choice of link lifetime."
+    "en": "Flow cards to export the timeline and send the link on, and a choice of link lifetime.",
+    "da": "Flow-kort til at eksportere tidslinjen og sende linket videre, og valg af levetid for links."
+  },
+  "1.2.0": {
+    "en": "Content tag and a Then card with tags for Advanced Flow, Tab as separator, and a 'yesterday' period for daily exports."
   }
 }

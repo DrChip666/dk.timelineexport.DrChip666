@@ -1,7 +1,7 @@
 {
   "_comment": "This file is generated. Please edit .homeycompose/app.json instead.",
   "id": "dk.timelineexport.DrChip666",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "compatibility": ">=5.0.0",
   "sdk": 3,
   "platforms": [
@@ -97,8 +97,8 @@
           "da": "Tidslinjen blev eksporteret"
         },
         "hint": {
-          "en": "Starts when an export file is ready. The links work for the link lifetime chosen in the app settings. The local link only works on your home network.",
-          "da": "Starter, når en eksportfil er klar. Linkene virker i den levetid, der er valgt i appens indstillinger. Det lokale link virker kun på dit hjemmenetværk."
+          "en": "Starts when an export file is ready. The links work for the link lifetime chosen in the app settings, and the local link only works on your home network. 'Content' holds the file itself as text, for example for an email.",
+          "da": "Starter, når en eksportfil er klar. Linkene virker i den levetid, der er valgt i appens indstillinger, og det lokale link virker kun på dit hjemmenetværk. 'Indhold' er selve filen som tekst, f.eks. til en e-mail."
         },
         "tokens": [
           {
@@ -181,6 +181,18 @@
               "en": "2026-10-26 23:00:00",
               "da": "2026-10-26 23:00:00"
             }
+          },
+          {
+            "name": "content",
+            "type": "string",
+            "title": {
+              "en": "Content",
+              "da": "Indhold"
+            },
+            "example": {
+              "en": "dateCreated;localTime;categoryName;…",
+              "da": "dateCreated;localTime;categoryName;…"
+            }
           }
         ],
         "id": "timeline_exported"
@@ -197,8 +209,8 @@
           "da": "Eksportér tidslinjen som [[format]] for [[period]]"
         },
         "hint": {
-          "en": "Saves the timeline as a file on Homey. Use the card 'The timeline was exported' to send the link on. Needs an API key in the app settings on newer Homey Pro models.",
-          "da": "Gemmer tidslinjen som en fil på Homey. Brug kortet 'Tidslinjen blev eksporteret' til at sende linket videre. Kræver en API-nøgle i appens indstillinger på nyere Homey Pro-modeller."
+          "en": "Saves the timeline as a file on Homey. Use the card 'The timeline was exported' to send the link or content on. 'Yesterday' is the whole previous day, which suits daily exports. Needs an API key in the app settings on newer Homey Pro models.",
+          "da": "Gemmer tidslinjen som en fil på Homey. Brug kortet 'Tidslinjen blev eksporteret' til at sende linket eller indholdet videre. 'I går' er hele den forrige dag, hvilket passer til daglige eksporter. Kræver en API-nøgle i appens indstillinger på nyere Homey Pro-modeller."
         },
         "args": [
           {
@@ -241,6 +253,13 @@
                 }
               },
               {
+                "id": "yesterday",
+                "label": {
+                  "en": "yesterday",
+                  "da": "i går"
+                }
+              },
+              {
                 "id": "day",
                 "label": {
                   "en": "the last 24 hours",
@@ -265,6 +284,187 @@
           }
         ],
         "id": "export_timeline"
+      },
+      {
+        "title": {
+          "en": "Export the timeline and return it",
+          "da": "Eksportér tidslinjen og returnér den"
+        },
+        "titleFormatted": {
+          "en": "Export the timeline as [[format]] for [[period]] and return it",
+          "da": "Eksportér tidslinjen som [[format]] for [[period]] og returnér den"
+        },
+        "hint": {
+          "en": "Same as 'Export the timeline', but gives the links and the content directly as tags on this card. Only available in Advanced Flow.",
+          "da": "Som 'Eksportér tidslinjen', men giver linkene og indholdet direkte som tags på dette kort. Kun tilgængeligt i Advanced Flow."
+        },
+        "args": [
+          {
+            "name": "format",
+            "type": "dropdown",
+            "title": {
+              "en": "File type",
+              "da": "Filtype"
+            },
+            "values": [
+              {
+                "id": "csv",
+                "label": {
+                  "en": "CSV",
+                  "da": "CSV"
+                }
+              },
+              {
+                "id": "json",
+                "label": {
+                  "en": "JSON",
+                  "da": "JSON"
+                }
+              }
+            ]
+          },
+          {
+            "name": "period",
+            "type": "dropdown",
+            "title": {
+              "en": "Period",
+              "da": "Periode"
+            },
+            "values": [
+              {
+                "id": "all",
+                "label": {
+                  "en": "the whole timeline",
+                  "da": "hele tidslinjen"
+                }
+              },
+              {
+                "id": "yesterday",
+                "label": {
+                  "en": "yesterday",
+                  "da": "i går"
+                }
+              },
+              {
+                "id": "day",
+                "label": {
+                  "en": "the last 24 hours",
+                  "da": "de seneste 24 timer"
+                }
+              },
+              {
+                "id": "week",
+                "label": {
+                  "en": "the last 7 days",
+                  "da": "de seneste 7 dage"
+                }
+              },
+              {
+                "id": "month",
+                "label": {
+                  "en": "the last 30 days",
+                  "da": "de seneste 30 dage"
+                }
+              }
+            ]
+          }
+        ],
+        "tokens": [
+          {
+            "name": "local_url",
+            "type": "string",
+            "title": {
+              "en": "Local link",
+              "da": "Lokalt link"
+            },
+            "example": {
+              "en": "http://192.168.1.50/app/.../homey-timeline.csv",
+              "da": "http://192.168.1.50/app/.../homey-timeline.csv"
+            }
+          },
+          {
+            "name": "external_url",
+            "type": "string",
+            "title": {
+              "en": "External link",
+              "da": "Eksternt link"
+            },
+            "example": {
+              "en": "https://.../homey-timeline.csv",
+              "da": "https://.../homey-timeline.csv"
+            }
+          },
+          {
+            "name": "file_name",
+            "type": "string",
+            "title": {
+              "en": "File name",
+              "da": "Filnavn"
+            },
+            "example": {
+              "en": "homey-timeline-2026-10-25-23-00-00.csv",
+              "da": "homey-timeline-2026-10-25-23-00-00.csv"
+            }
+          },
+          {
+            "name": "count",
+            "type": "number",
+            "title": {
+              "en": "Notifications",
+              "da": "Antal notifikationer"
+            },
+            "example": 235
+          },
+          {
+            "name": "format",
+            "type": "string",
+            "title": {
+              "en": "File type",
+              "da": "Filtype"
+            },
+            "example": {
+              "en": "CSV",
+              "da": "CSV"
+            }
+          },
+          {
+            "name": "period",
+            "type": "string",
+            "title": {
+              "en": "Period",
+              "da": "Periode"
+            },
+            "example": {
+              "en": "2026-10-18 09:12:00 – 2026-10-25 22:41:00",
+              "da": "2026-10-18 09:12:00 – 2026-10-25 22:41:00"
+            }
+          },
+          {
+            "name": "expires",
+            "type": "string",
+            "title": {
+              "en": "Link expires",
+              "da": "Link udløber"
+            },
+            "example": {
+              "en": "2026-10-26 23:00:00",
+              "da": "2026-10-26 23:00:00"
+            }
+          },
+          {
+            "name": "content",
+            "type": "string",
+            "title": {
+              "en": "Content",
+              "da": "Indhold"
+            },
+            "example": {
+              "en": "dateCreated;localTime;categoryName;…",
+              "da": "dateCreated;localTime;categoryName;…"
+            }
+          }
+        ],
+        "id": "export_timeline_tokens"
       }
     ]
   }
