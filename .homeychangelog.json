@@ -12,6 +12,7 @@
     "da": "Indholds-tag og et Then-kort med tags til Advanced Flow, tabulator som skilletegn og perioden 'i går' til daglige eksporter."
   },
   "1.2.1": {
-    "en": "   The app no longer asks for full access to Homey. It only uses your personal API key to read the timeline."
+    "en": "The app no longer asks for full access to Homey. It only uses your personal API key to read the timeline."
+    "da": "Appen beder ikke længere om fuld adgang til Homey. Den bruger kun din personlige API-nøgle til at læse tidslinjen."
   }
 }
