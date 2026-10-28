@@ -8,8 +8,8 @@
     "da": "Eksportér tidslinjen som [[format]] for [[period]]"
   },
   "hint": {
-    "en": "Saves the timeline as a file on Homey. Use the card 'The timeline was exported' to send the link or content on. 'Yesterday' is the whole previous day, which suits daily exports. Needs an API key in the app settings on newer Homey Pro models.",
-    "da": "Gemmer tidslinjen som en fil på Homey. Brug kortet 'Tidslinjen blev eksporteret' til at sende linket eller indholdet videre. 'I går' er hele den forrige dag, hvilket passer til daglige eksporter. Kræver en API-nøgle i appens indstillinger på nyere Homey Pro-modeller."
+    "en": "Saves the timeline as a file on Homey. Use the card 'The timeline was exported' to send the link or content on. 'Yesterday' is the whole previous day, which suits daily exports. Needs a personal API key in the app settings.",
+    "da": "Gemmer tidslinjen som en fil på Homey. Brug kortet 'Tidslinjen blev eksporteret' til at sende linket eller indholdet videre. 'I går' er hele den forrige dag, hvilket passer til daglige eksporter. Kræver en personlig API-nøgle i appens indstillinger."
   },
   "args": [
     {

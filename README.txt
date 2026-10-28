@@ -1,5 +1,3 @@
-Your timeline only keeps so much, and once a notification is cleaned up it is gone. Timeline Export lets you save it first: open the app settings, choose the categories, dates or words you care about, and download everything as a CSV file for a spreadsheet or as JSON for your own tools.
+Your timeline only keeps so much, and once a notification is cleaned up it is gone. Timeline Export lets you save it first, as a CSV file for a spreadsheet or as JSON for your own tools. Download it from the app settings, or let a Flow export the previous day every night and send it on by push message or email. Handy before a big clean-up, or when you need to show exactly when a sensor, alarm or Flow went off.
 
-It also works on its own from Flows. Export the last week every Sunday evening and send the link on as a push message, an email or anything else you like. Handy before a big clean-up, or when you need to show exactly when a sensor, alarm or Flow went off.
-
-On newer Homey Pro models you add a personal API key once in the app settings, so the app is allowed to read your timeline.
+The app reads your timeline with a personal API key that you add once in the app settings. The key only needs access to read notifications. It is stored only in the app's settings on your own Homey and is never sent anywhere else. Personal API keys are only available on newer Homey Pro models, so the app does not work on older Homey models (before Homey Pro Early 2019).

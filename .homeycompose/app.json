@@ -36,9 +36,6 @@
     ]
   },
   "brandColor": "#2E5E8C",
-  "permissions": [
-    "homey:manager:api"
-  ],
   "images": {
     "small": "/assets/images/small.png",
     "large": "/assets/images/large.png",

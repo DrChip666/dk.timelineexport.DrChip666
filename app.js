@@ -97,25 +97,43 @@ class TimelineExportApp extends Homey.App {
   }
 
   /**
-   * Uses the user's own API key when one is saved. Without one, the app's
-   * own token is tried first; on newer Homey Pro models that token is not
-   * allowed to read the timeline, which ends in a "token required" error.
+   * Homey's local Web API address. homey.api.getLocalUrl() is tried first;
+   * Homey's own LAN address is the fallback.
+   */
+  async getApiAddress() {
+    try {
+      const url = await this.homey.api.getLocalUrl();
+      if (url) return url;
+    } catch (err) {
+      this.log('getLocalUrl is not available, using the LAN address instead:', err.message || err);
+    }
+    const address = await this.getLocalAddress();
+    if (!address) throw new Error('Homey\'s local address is not available');
+    return `http://${address}`;
+  }
+
+  /**
+   * The timeline is read with the user's personal API key, which only needs
+   * read access to notifications. The key is only sent to Homey's own local
+   * Web API address.
    */
   async getApi() {
     const token = this.getToken();
-    // Also rebuild when the key changed, in case the settings event arrives late
+    if (!token) {
+      const error = new Error(this.homey.__('errors.tokenRequired'));
+      error.code = 'token_required';
+      throw error;
+    }
+
+    // Rebuild when the key changed, in case the settings event arrives late
     if (this.api && this.apiToken !== token) this.api = null;
 
     if (!this.api) {
+      this.api = await HomeyAPI.createLocalAPI({
+        address: await this.getApiAddress(),
+        token,
+      });
       this.apiToken = token;
-      if (token) {
-        this.api = await HomeyAPI.createLocalAPI({
-          address: await this.homey.api.getLocalUrl(),
-          token,
-        });
-      } else {
-        this.api = await HomeyAPI.createAppAPI({ homey: this.homey });
-      }
     }
     return this.api;
   }
@@ -136,6 +154,7 @@ class TimelineExportApp extends Homey.App {
     try {
       return await fn(await this.getApi());
     } catch (err) {
+      if (err.code === 'token_required') throw err;
       if (TimelineExportApp.isAccessError(err)) {
         this.api = null;
         const hasToken = !!this.getToken();

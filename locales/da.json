@@ -26,7 +26,7 @@
     "downloadFallback": "Hvis der ikke skete noget, så brug et af linkene ovenfor. Hold Ctrl-tasten (Cmd på Mac) nede, mens du klikker på et link, ellers åbner det muligvis ikke, f.eks. i Chrome. Du kan også bruge Kopiér til udklipsholder.",
     "error": "Noget gik galt: __message__",
     "access": "Adgang",
-    "accessIntro": "På nyere Homey Pro-modeller må en app ikke selv læse tidslinjen. Opret en API-nøgle i Homeys webapp under Indstillinger → API-nøgler, giv den kun adgang til at læse notifikationer, og indsæt den her.",
+    "accessIntro": "Appen læser tidslinjen med en personlig API-nøgle. Opret en i Homeys webapp under Indstillinger → API-nøgler, giv den kun adgang til at læse notifikationer, og indsæt den her. Nøglen gemmes kun i denne apps indstillinger på din egen Homey og sendes aldrig andre steder hen.",
     "token": "API-nøgle",
     "tokenPlaceholder": "Indsæt din API-nøgle",
     "tokenSaved": "Der er gemt en API-nøgle.",
@@ -55,7 +55,7 @@
     "delimiterHint": "Bruges også af Flow-kortene. Vælg Tabulator, hvis du indsætter indholdet i Excel eller Google Sheets, f.eks. fra en e-mail, så data lander direkte i kolonner."
   },
   "errors": {
-    "tokenRequired": "Homey lader ikke apps læse tidslinjen på egen hånd. Tilføj en API-nøgle i appens indstillinger.",
+    "tokenRequired": "Tilføj en personlig API-nøgle i appens indstillinger, så appen må læse tidslinjen.",
     "tokenRejected": "Den gemte API-nøgle blev afvist. Tjek, at den stadig findes og må læse notifikationer."
   }
 }

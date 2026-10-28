@@ -26,7 +26,7 @@
     "downloadFallback": "If nothing happened, use one of the links above. Hold down Ctrl (Cmd on Mac) while you click a link, otherwise it may not open, for example in Chrome. You can also use Copy to clipboard.",
     "error": "Something went wrong: __message__",
     "access": "Access",
-    "accessIntro": "On newer Homey Pro models an app may not read the timeline by itself. Create an API key in the Homey web app under Settings → API Keys, give it access to read notifications only, and paste it here.",
+    "accessIntro": "The app reads the timeline with a personal API key. Create one in the Homey web app under Settings → API Keys, give it access to read notifications only, and paste it here. The key is stored only in this app's settings on your own Homey and is never sent anywhere else.",
     "token": "API key",
     "tokenPlaceholder": "Paste your API key",
     "tokenSaved": "An API key is saved.",
@@ -55,7 +55,7 @@
     "delimiterHint": "Also used by Flow cards. Choose Tab if you paste the content into Excel or Google Sheets, for example from an email, to get the data in columns straight away."
   },
   "errors": {
-    "tokenRequired": "Homey does not let apps read the timeline on their own. Add an API key in the app settings.",
+    "tokenRequired": "Add a personal API key in the app settings, so the app may read the timeline.",
     "tokenRejected": "The saved API key was refused. Check that it still exists and may read notifications."
   }
 }
